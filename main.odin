@@ -1,6 +1,7 @@
 package main
 
 import "config"
+import "core:flags"
 import "core:fmt"
 import "core:os"
 import "core:path/filepath"
@@ -57,23 +58,25 @@ get_installed_kernels :: proc() -> [dynamic]string {
 }
 
 
-get_boot_files :: proc() -> [dynamic]config.Kernel {
+get_boot_files :: proc(quiet := false) -> [dynamic]config.Kernel {
 	kernel_list := get_installed_kernels()
 	kernel_files: [dynamic]config.Kernel
-	log.info("Assuming no separate /boot/efi partition")
-	log.info("Assuming no separate /boot/EFI partition")
+	if !quiet {
+		log.info("Assuming no separate /boot/efi partition")
+		log.info("Assuming no separate /boot/EFI partition")
+	}
 	for kernel in kernel_list {
 		kernel_union: config.Kernel
 		vmlinuz := fmt.aprintf("/boot/%v%v", VMLINUZ_PREFIX, kernel)
 		initramfs := fmt.aprintf("/boot/%v%v.img", INITRAMFS_PREFIX, kernel)
 		if !os.exists(vmlinuz) {
-			log.warning("No kernel binary found for kernel", kernel, ", skipping...")
+			if !quiet do log.warning("No kernel binary found for kernel", kernel, ", skipping...")
 			continue
 		}
 		kernel_union.version = kernel
 		kernel_union.vmlinuz = vmlinuz
 		if !os.exists(initramfs) {
-			log.warning("No initramfs found for kernel", kernel)
+			if !quiet do log.warning("No initramfs found for kernel", kernel)
 			kernel_union.initramfs = ""
 		} else {
 			kernel_union.initramfs = initramfs
@@ -84,8 +87,22 @@ get_boot_files :: proc() -> [dynamic]config.Kernel {
 }
 
 main :: proc() {
+	Options :: struct {
+		output: os.Handle `args:"pos=1,file=cw,name=o" usage:"Save config to selected path"`,
+		quiet:  bool `args:"name=q" usage:"Don't ouput configure messages"`,
+	}
+	opt: Options
+	style: flags.Parsing_Style = .Unix
+
+	flags.parse_or_exit(&opt, os.args, style)
+
 	check_system()
-	config := config.generate_config(get_boot_files())
-	fmt.println(config)
+	config := config.generate_config(get_boot_files(quiet = opt.quiet))
+	if opt.output != 0 {
+		os.write_string(opt.output, config)
+	} else {
+		fmt.println(config)
+	}
+	delete(config)
 }
 
