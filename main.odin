@@ -88,8 +88,9 @@ get_boot_files :: proc(quiet := false) -> [dynamic]config.Kernel {
 
 main :: proc() {
 	Options :: struct {
-		output: os.Handle `args:"pos=1,file=cw,name=o" usage:"Save config to selected path"`,
-		quiet:  bool `args:"name=q" usage:"Don't ouput configure messages"`,
+		output:    os.Handle `args:"pos=1,file=cw,name=o" usage:"Save config to selected path"`,
+		overwrite: bool `args:"name=O" usage:"Overwrite existing configuration, ignores -o"`,
+		quiet:     bool `args:"name=q" usage:"Don't ouput configure messages"`,
 	}
 	opt: Options
 	style: flags.Parsing_Style = .Unix
@@ -97,12 +98,20 @@ main :: proc() {
 	flags.parse_or_exit(&opt, os.args, style)
 
 	check_system()
-	config := config.generate_config(get_boot_files(quiet = opt.quiet))
-	if opt.output != 0 {
-		os.write_string(opt.output, config)
+
+	cfg := config.generate_config(get_boot_files(quiet = opt.quiet))
+
+	if opt.overwrite {
+		config_path := config.get_path()
+		if config_path == "" do log.error("Could not find existing configuration")
+		ok := os.write_entire_file(config_path, transmute([]u8)cfg)
+		if !ok do log.error("Failed to overwrite existing config file")
+		log.info("Overwrote existing configuration at", config_path)
+	} else if opt.output != 0 {
+		os.write_string(opt.output, cfg)
 	} else {
-		fmt.println(config)
+		fmt.println(cfg)
 	}
-	delete(config)
+	delete(cfg)
 }
 
