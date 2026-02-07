@@ -105,7 +105,7 @@ main :: proc() {
 		config_path := config.get_path()
 		if config_path == "" do log.error("Could not find existing configuration")
 		ok := os.write_entire_file(config_path, transmute([]u8)cfg)
-		if !ok do log.error("Failed to overwrite existing config file")
+		if !ok do log.error("Failed to overwrite existing config file at", config_path, ", did you run with sudo?")
 		log.info("Overwrote existing configuration at", config_path)
 	} else if opt.output != 0 {
 		os.write_string(opt.output, cfg)

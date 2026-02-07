@@ -42,6 +42,9 @@ configuration to the stdout. To save configuration, pass `-o` flag
 access, then you are trying to write to somewhere without sudo
 privileges and you should try again.
 
+You can also overwrite existing configuration (based on the 
+[Limine specification](https://codeberg.org/Limine/Limine/src/branch/v10.x/CONFIG.md#location-of-the-config-file)) with `-O` flag, which will ignore `-o` flag.
+
 This program is very limited, because I am not currently invested
 in expanding BIOS/other distros support, but pull requests
 are appreciated.
