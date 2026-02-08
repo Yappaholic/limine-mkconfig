@@ -1,5 +1,9 @@
 package main
 
+when ODIN_OS != .Linux {
+	#panic("This package is only supported for linux")
+}
+
 import "blkid"
 import "config"
 import "core:c"
@@ -142,8 +146,8 @@ get_mounted_boot_device :: proc() -> string {
 main :: proc() {
 	Options :: struct {
 		output:       os.Handle `args:"pos=1,file=cw,name=o" usage:"Save config to selected path"`,
-		separate_efi: bool `args:"name=e" usage:"Assume separate /boot/efi partition"`,
-		overwrite:    bool `args:"name=O" usage:"Overwrite existing configuration, ignores -o"`,
+		separate_efi: bool `args:"pos=3,name=e" usage:"Assume separate /boot/efi partition"`,
+		overwrite:    bool `args:"pos=2,name=O" usage:"Overwrite existing configuration, ignores -o"`,
 		quiet:        bool `args:"name=q" usage:"Don't ouput configure messages"`,
 	}
 	opt: Options
