@@ -1,6 +1,8 @@
 package main
 
+import "blkid"
 import "config"
+import "core:c"
 import "core:flags"
 import "core:fmt"
 import "core:os"
@@ -58,12 +60,17 @@ get_installed_kernels :: proc() -> [dynamic]string {
 }
 
 
-get_boot_files :: proc(quiet := false) -> [dynamic]config.Kernel {
+get_boot_files :: proc(quiet := false, separate_efi := false) -> [dynamic]config.Kernel {
 	kernel_list := get_installed_kernels()
 	kernel_files: [dynamic]config.Kernel
 	if !quiet {
-		log.info("Assuming no separate /boot/efi partition")
-		log.info("Assuming no separate /boot/EFI partition")
+		if !separate_efi {
+			log.info("Assuming no separate /boot/efi partition")
+			log.info("Assuming no separate /boot/EFI partition")
+		} else {
+			log.info("Assuming separate /boot/efi partition")
+			log.info("Assuming separate /boot/EFI partition")
+		}
 	}
 	for kernel in kernel_list {
 		kernel_union: config.Kernel
@@ -86,11 +93,58 @@ get_boot_files :: proc(quiet := false) -> [dynamic]config.Kernel {
 	return kernel_files
 }
 
+get_mounted_boot_uuid :: proc(devname: string) -> string {
+	pr := blkid.new_probe_from_filename(strings.clone_to_cstring(devname))
+	defer blkid.free_probe(pr)
+	if pr == nil {
+		log.error("Failed to probe /boot mounted partition", devname, "did you run with sudo?")
+	}
+	partition_uuid: cstring
+	if blkid.probe_is_wholedisk(pr) == 1 {
+		log.error("Can't find UUID for whole disk", devname)
+	} else {
+		partition_devno := blkid.probe_get_devno(pr)
+		wholedisk_devno := blkid.probe_get_wholedisk_devno(pr)
+		wholedisk_name := blkid.devno_to_devname(wholedisk_devno)
+		// Close previous probe
+		blkid.free_probe(pr)
+		// Start probing whole disk
+		pr = blkid.new_probe_from_filename(wholedisk_name)
+		blkid.probe_enable_partitions(pr, 1)
+		partlist := blkid.probe_get_partitions(pr)
+		partition := blkid.partlist_devno_to_partition(partlist, partition_devno)
+		partition_uuid = blkid.partition_get_uuid(partition)
+	}
+	return strings.clone_from_cstring(partition_uuid)
+}
+
+get_mounted_boot_device :: proc() -> string {
+	mount_file: ^c.FILE
+	mount_entry: ^blkid.Mntent
+	filename: cstring = "/proc/mounts" // Should be mostly available
+
+	mount_file = blkid.setmntent(filename, "r")
+	defer blkid.endmntent(mount_file)
+	if mount_file == nil {
+		log.error("setmntent")
+	}
+	boot_device: string
+	for {
+		mount_entry = blkid.getmntent(mount_file)
+		if mount_entry == nil do break
+		if mount_entry.dir == "/boot" {
+			boot_device = strings.clone_from_cstring(mount_entry.fsname)
+		}
+	}
+	return boot_device
+}
+
 main :: proc() {
 	Options :: struct {
-		output:    os.Handle `args:"pos=1,file=cw,name=o" usage:"Save config to selected path"`,
-		overwrite: bool `args:"name=O" usage:"Overwrite existing configuration, ignores -o"`,
-		quiet:     bool `args:"name=q" usage:"Don't ouput configure messages"`,
+		output:       os.Handle `args:"pos=1,file=cw,name=o" usage:"Save config to selected path"`,
+		separate_efi: bool `args:"name=e" usage:"Assume separate /boot/efi partition"`,
+		overwrite:    bool `args:"name=O" usage:"Overwrite existing configuration, ignores -o"`,
+		quiet:        bool `args:"name=q" usage:"Don't ouput configure messages"`,
 	}
 	opt: Options
 	style: flags.Parsing_Style = .Unix
@@ -98,9 +152,21 @@ main :: proc() {
 	flags.parse_or_exit(&opt, os.args, style)
 
 	check_system()
+	cfg: string
+	if opt.separate_efi {
+		boot_device := get_mounted_boot_device()
+		uuid := get_mounted_boot_uuid(boot_device)
+		cfg = config.generate_config(
+			get_boot_files(quiet = opt.quiet, separate_efi = opt.separate_efi),
+			uuid = uuid,
+		)
+	} else {
+		cfg = config.generate_config(get_boot_files(quiet = opt.quiet))
+	}
 
-	cfg := config.generate_config(get_boot_files(quiet = opt.quiet))
-
+	if opt.overwrite && opt.output != 0 {
+		log.error("-O and -o cannot be used at the same time")
+	}
 	if opt.overwrite {
 		config_path := config.get_path()
 		if config_path == "" do log.error("Could not find existing configuration")

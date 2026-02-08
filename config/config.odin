@@ -63,11 +63,17 @@ read_extras :: proc() -> (Extras, bool) {
 	return output, true
 }
 
-generate_entries :: proc(kernel_list: [dynamic]Kernel) -> [dynamic]ConfigEntry {
+generate_entries :: proc(kernel_list: [dynamic]Kernel, uuid := "") -> [dynamic]ConfigEntry {
 	entries: [dynamic]ConfigEntry
+	prefix: string
+	if uuid == "" {
+		prefix = "boot():"
+	} else {
+		prefix = fmt.aprintf("uuid(%v):", uuid)
+	}
 	for kernel_entry in kernel_list {
-		path := fmt.aprintf("boot():%v", kernel_entry.vmlinuz[5:])
-		modules_path := fmt.aprintf("boot():%v", kernel_entry.initramfs[5:])
+		path := fmt.aprintf("%v%v", prefix, kernel_entry.vmlinuz[5:])
+		modules_path := fmt.aprintf("%v%v", prefix, kernel_entry.initramfs[5:])
 		comment := fmt.aprintf("Boot %v!", kernel_entry.version)
 		entry := ConfigEntry{kernel_entry.version, "linux", path, modules_path, comment}
 		append_elem(&entries, entry)
@@ -75,8 +81,13 @@ generate_entries :: proc(kernel_list: [dynamic]Kernel) -> [dynamic]ConfigEntry {
 	return entries
 }
 
-generate_config :: proc(kernel_files: [dynamic]Kernel) -> string {
-	entries := generate_entries(kernel_files)
+generate_config :: proc(kernel_files: [dynamic]Kernel, uuid := "") -> string {
+	entries: [dynamic]ConfigEntry
+	if uuid == "" {
+		entries = generate_entries(kernel_files)
+	} else {
+		entries = generate_entries(kernel_files, uuid = uuid)
+	}
 	output: [dynamic]string
 	extras, ok := read_extras()
 	if ok {
