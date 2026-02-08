@@ -130,5 +130,10 @@ foreign blkid {
 	parttable_get_type :: proc(tab: parttable) -> cstring ---
 
 	probe_get_partitions :: proc(pr: probe) -> partlist ---
+	// Miscellanous
+	devno_to_devname :: proc(devno: dev_t) -> cstring ---
+	devno_to_wholedisk :: proc(dev: dev_t, diskname: cstring, len: uint, diskdevno: ^dev_t) -> int ---
+	get_dev_size :: proc(fd: int) -> loff_t ---
+	get_library_version :: proc(ver_string: ^cstring, date_string: ^cstring) -> int ---
 }
 
