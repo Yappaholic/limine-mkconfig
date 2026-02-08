@@ -20,6 +20,6 @@ warning :: proc(args: ..any) {
 error :: proc(args: ..any, exit_code := 1) {
 	fmt.eprint(INFO_RED)
 	fmt.eprintln(..args)
-	os.exit(1)
+	os.exit(exit_code)
 }
 
