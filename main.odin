@@ -53,7 +53,9 @@ get_installed_kernels :: proc() -> [dynamic]string {
 	}
 
 	kernels_list: [dynamic]string
-	for fi in fis {
+	// Reverse search to get from highest kernel version to lowest
+	for i := len(fis) - 1; i >= 0; i -= 1 {
+		fi := fis[i]
 		_, name := filepath.split(fi.fullpath)
 
 		if fi.is_dir {
