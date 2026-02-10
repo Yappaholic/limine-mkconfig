@@ -1,5 +1,7 @@
 package main
 
+VERSION :: "0.1.1"
+
 when ODIN_OS != .Linux {
 	#panic("This package is only supported for linux")
 }
@@ -151,11 +153,22 @@ main :: proc() {
 		separate_efi: bool `args:"pos=3,name=e" usage:"Assume separate /boot/efi partition"`,
 		overwrite:    bool `args:"pos=2,name=O" usage:"Overwrite existing configuration, ignores -o"`,
 		quiet:        bool `args:"name=q" usage:"Don't ouput configure messages"`,
+		version:      bool `args:"name=v" usage:"Output program version"`,
 	}
 	opt: Options
 	style: flags.Parsing_Style = .Unix
 
 	flags.parse_or_exit(&opt, os.args, style)
+
+	// Immediate checks
+	if opt.overwrite && opt.output != 0 {
+		log.error("-O and -o cannot be used at the same time")
+	}
+
+	if opt.version {
+		log.info("limine-config version is", VERSION)
+		os.exit(0)
+	}
 
 	check_system()
 	cfg: string
@@ -170,9 +183,6 @@ main :: proc() {
 		cfg = config.generate_config(get_boot_files(quiet = opt.quiet))
 	}
 
-	if opt.overwrite && opt.output != 0 {
-		log.error("-O and -o cannot be used at the same time")
-	}
 	if opt.overwrite {
 		config_path := config.get_path()
 		if config_path == "" do log.error("Could not find existing configuration")
