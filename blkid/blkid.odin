@@ -14,7 +14,7 @@ DebugMask :: distinct enum {
 	FULL_DEBUG = 0xffff,
 }
 
-foreign import blkid "system:libblkid.so.1"
+foreign import blkid "system:blkid"
 @(link_prefix = "blkid_")
 @(default_calling_convention = "c")
 foreign blkid {
@@ -136,4 +136,3 @@ foreign blkid {
 	get_dev_size :: proc(fd: int) -> loff_t ---
 	get_library_version :: proc(ver_string: ^cstring, date_string: ^cstring) -> int ---
 }
-
