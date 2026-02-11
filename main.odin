@@ -172,6 +172,7 @@ main :: proc() {
 
 	check_system()
 	cfg: string
+	defer delete_string(cfg)
 	if opt.separate_efi {
 		boot_device := get_mounted_boot_device()
 		uuid := get_mounted_boot_uuid(boot_device)
@@ -194,6 +195,4 @@ main :: proc() {
 	} else {
 		fmt.println(cfg)
 	}
-	delete(cfg)
 }
-
