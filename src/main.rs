@@ -1,6 +1,10 @@
 mod blkid;
+mod config;
+mod kernel;
 
 fn main() {
-    let boot_device = blkid::get_mounted_boot_device();
-    println!("Mounted boot device is: {}", boot_device);
+    let kernels = kernel::find_installed_kernels();
+    for kernel in kernels {
+        println!("{} | {}", kernel.path, kernel.initramfs_path);
+    }
 }
