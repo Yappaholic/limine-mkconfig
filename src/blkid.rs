@@ -4,10 +4,7 @@
 #![allow(dead_code)]
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 use libc::c_char;
-use std::{
-    ffi::{CStr, CString},
-    path::PathBuf,
-};
+use std::ffi::CStr;
 
 pub enum Status {
     Unknown = 1,

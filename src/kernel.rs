@@ -39,7 +39,7 @@ pub fn find_installed_kernels() -> Vec<Kernel> {
 
         let mut initramfs_name = PathBuf::from("/boot/");
         initramfs_name.push(format!("{}{}.img", INITRAMFS_PREFIX, kernel_name.as_str()));
-        println!("{:#?}", initramfs_name.as_os_str());
+        //println!("{:#?}", initramfs_name.as_os_str());
         if let Ok(true) = fs::exists(&kernel_name1) {
             kernel.path = kernel_name1
                 .clone()
