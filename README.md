@@ -4,6 +4,10 @@ This is a simple program to scan for installed linux kernels
 and output valid [Limine](https://codeberg.org/Limine/Limine)
 entries.
 
+> [!WARNING]
+> Currently this version is broken when compiling with >Odin-2026.02.
+> The working rewrite in Rust is located in `rust` branch
+
 ## Installation
 
 Dependencies:
