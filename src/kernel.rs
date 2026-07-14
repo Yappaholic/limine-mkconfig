@@ -49,7 +49,7 @@ pub fn find_installed_kernels() -> Vec<Kernel> {
                 .to_string();
         }
         if let Ok(true) = fs::exists(&kernel_name2) {
-            if kernel.name.is_empty() {
+            if kernel.path.is_empty() {
                 kernel.path = kernel_name2
                     .clone()
                     .file_name()
