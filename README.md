@@ -8,21 +8,19 @@ entries.
 
 Dependencies:
 
-- [odin](https://odin-lang.org)
-- make (optional)
+- Rust toolchain
 
 To install, clone the repository, and inside repository run:
 
 ```bash
-make
-sudo make install
+cargo install
 ```
 
-Or, if you don't want to use `make`/want to test package first:
+Or, if you want to test package first:
 
 ```bash
-odin build .
-./limine-mkconfig --help
+cargo build --release
+./target/release/limine-mkconfig --help
 ```
 
 
